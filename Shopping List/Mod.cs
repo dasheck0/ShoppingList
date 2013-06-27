@@ -60,37 +60,45 @@ namespace ShoppingList
             {
                 RoomChatMessageMessage message = (RoomChatMessageMessage)info.arguments[0];
 
-                String keywords = "(";
+                //parse buylist
+                if (lists[0].getList().Count > 0)
+                {                   
+                    String keywords = "(";
 
-                foreach(String keyword in lists[0].getList())
-                {
-                    keywords += keyword + @"|";
+                    foreach(String keyword in lists[0].getList())
+                    {
+                        keywords += keyword + @"|";
+                    }
+
+                    foreach (String keyword in lists[1].getList())
+                    {
+                        keywords += keyword + @"|";
+                    }
+
+                    keywords += ")";
+
+                    Regex regex = new Regex(keywords, RegexOptions.IgnoreCase);
+                    message.text = regex.Replace(message.text, "<color=#df3a01>$&</color>");
                 }
 
-                keywords += ")";
-
-                Regex regex = new Regex(keywords, RegexOptions.IgnoreCase);
-                message.text = regex.Replace(message.text, "<color=#f1f425>$&</color>");
-
-               // message.text = keywords;
-
-                 /*foreach (String buyItem in lists[0].getList())
+                //parse selllist
+                /*if (lists[1].getList().Count > 0)
                 {
-                    if (message.text.ToLower().Contains(buyItem.ToLower()))
-                    {
-                        message.text = message.text.Replace(buyItem, "<color=#ff4343>" + buyItem + "</color>");
-                    }
-                }
+                    String keywords = "(";
 
-               foreach (String sellItem in lists[1].getList())
-                {
-                    if (message.text.ToLower().Contains(sellItem.ToLower()))
+                    foreach (String keyword in lists[1].getList())
                     {
-                        message.text = message.text.Replace(sellItem, "<color=#ff4343>" + sellItem + "</color>");
+                        keywords += keyword + @"|";
                     }
-                }*/
 
-                return false;//hooks(false, message);
+                    keywords += ")";
+
+                    Regex regex = new Regex(keywords, RegexOptions.IgnoreCase);
+                    message.text = regex.Replace(message.text, "<color=#df3a01>$&</color>");
+                }     
+                 */          
+               
+                return false;
             }
             else if(info.targetMethod.Equals("sendRequest"))
             {
