@@ -1,0 +1,9 @@
+H:\Programmierung\C#\Scrolls Shopping List\Template.mod\bin\Debug\Template.mod.dll
+H:\Programmierung\C#\Scrolls Shopping List\Template.mod\bin\Debug\Template.mod.pdb
+H:\Programmierung\C#\Scrolls Shopping List\Template.mod\bin\Debug\Assembly-CSharp.dll
+H:\Programmierung\C#\Scrolls Shopping List\Template.mod\bin\Debug\Mono.Cecil.dll
+H:\Programmierung\C#\Scrolls Shopping List\Template.mod\bin\Debug\ScrollsModLoader.Interfaces.dll
+H:\Programmierung\C#\Scrolls Shopping List\Template.mod\bin\Debug\UnityEngine.dll
+H:\Programmierung\C#\Scrolls Shopping List\Template.mod\obj\Debug\ResolveAssemblyReference.cache
+H:\Programmierung\C#\Scrolls Shopping List\Template.mod\obj\Debug\Template.mod.dll
+H:\Programmierung\C#\Scrolls Shopping List\Template.mod\obj\Debug\Template.mod.pdb
