@@ -35,11 +35,11 @@ namespace ShoppingList
 
                     if(!list.exportList(filename))
                     {
-                        msg("Couldn't export " + list.getListName());
+                        msg("Couldn't export " + list.getListName(), "Shopping List");
                     }
                     else
                     {
-                        msg("Exported " + list.getListName() + " to " + filename);
+                        msg("Exported " + list.getListName() + " to " + filename, "Shopping List");
                     }
                 }
 
@@ -53,11 +53,11 @@ namespace ShoppingList
 
                     if (!list.importList(filename))
                     {
-                        msg("Couldn't import " + list.getListName());
+                        msg("Couldn't import " + list.getListName(), "Shopping List");
                     }
                     else
                     {
-                        msg("Imported " + list.getListName() + " from " + filename);
+                        msg("Imported " + list.getListName() + " from " + filename, "Shopping List");
                     }
                 }
 
@@ -70,6 +70,10 @@ namespace ShoppingList
             else if (rcmm.text.StartsWith("/!sell"))
             {
                 return proceedUnbuyUnsell(rcmm, lists[1]);
+            }
+            else if (rcmm.text.StartsWith("/print"))
+            {
+                return proceedPrint(rcmm, lists);
             }
             else
             {
@@ -87,7 +91,7 @@ namespace ShoppingList
                 temp += scroll.ToLower() + "\n";
             }
 
-            msg(temp);
+            msg(temp, "Shopping List");
 
             return true;
         }
@@ -126,11 +130,11 @@ namespace ShoppingList
 
                 if (!notAdded.Equals(""))
                 {
-                    msg("Couldn't add all scrolls to " + list.getListName().ToLower() + ". Exception(s): " + notAdded);
+                    msg("Couldn't add all scrolls to " + list.getListName().ToLower() + ". Exception(s): " + notAdded, "Shopping List");
                 }
                 else
                 {
-                    msg("All scrolls added to " + list.getListName().ToLower());
+                    msg("All scrolls added to " + list.getListName().ToLower(), "Shopping List");
                 }
             }
             else
@@ -147,16 +151,16 @@ namespace ShoppingList
 
                     if (!list.addItem(scrollName.Trim()))
                     {
-                        msg("Couldn't add all scrolls to " + list.getListName().ToLower() + ". Exception(s): " + scrollName);
+                        msg("Couldn't add all scrolls to " + list.getListName().ToLower() + ". Exception(s): " + scrollName, "Shopping List");
                     }
                     else
                     {
-                        msg("All scrolls added to " + list.getListName().ToLower());
+                        msg("All scrolls added to " + list.getListName().ToLower(), "Shopping List");
                     }
                 }
                 else
                 {
-                    msg("Unknown command! Correct syntax: " + whiteSpaceSplitted[0].Trim() + " scroll (, anotherscroll)* ");
+                    msg("Unknown command! Correct syntax: " + whiteSpaceSplitted[0].Trim() + " scroll (, anotherscroll)* ", "Shopping List");
                 }
             }
 
@@ -197,11 +201,11 @@ namespace ShoppingList
 
                 if (!notRemoved.Equals(""))
                 {
-                    msg("Couldn't remove all desired scrolls from " + list.getListName().ToLower() + ". Exceptions: " + notRemoved);
+                    msg("Couldn't remove all desired scrolls from " + list.getListName().ToLower() + ". Exceptions: " + notRemoved, "Shopping List");
                 }
                 else
                 {
-                    msg("All desired scrolls removed from " + list.getListName().ToLower());
+                    msg("All desired scrolls removed from " + list.getListName().ToLower(), "Shopping List");
                 }
             }
             else
@@ -212,7 +216,7 @@ namespace ShoppingList
                     if (whiteSpaceSplitted[1].Trim().Equals("*"))
                     {
                         list.clearList();
-                        msg("Cleared " + list.getListName().ToLower());
+                        msg("Cleared " + list.getListName().ToLower(), "Shopping List");
                     }
                     else
                     {
@@ -225,44 +229,84 @@ namespace ShoppingList
 
                         if (!list.removeItem(scrollName.Trim()))
                         {
-                            msg("Couldn't remove all desired scrolls from " + list.getListName().ToLower() + ". Exceptions: " + scrollName);
+                            msg("Couldn't remove all desired scrolls from " + list.getListName().ToLower() + ". Exceptions: " + scrollName, "Shopping List");
                         }
                         else
                         {
-                            msg("All desired scrolls removed from " + list.getListName().ToLower());
+                            msg("All desired scrolls removed from " + list.getListName().ToLower(), "Shopping List");
                         }
                     }  
                 }
                 else
                 {
-                    msg("Unknown command! Correct syntax: " + whiteSpaceSplitted[0] + " scroll (, anotherscroll)* ");
+                    msg("Unknown command! Correct syntax: " + whiteSpaceSplitted[0] + " scroll (, anotherscroll)* ", "Shopping List");
                 }
             }
 
             return true;
         }
 
-        private bool proceedClear(RoomChatMessageMessage rcmm, AbstractShoppingList list)
+        private bool proceedPrint(RoomChatMessageMessage rcmm, List<AbstractShoppingList> lists)
         {
-            //ersetzen durch /!buy *
-            return true;
-        }
+            String[] splitted = rcmm.text.Split(' ');
+            if(splitted.Length == 1)
+            {
+                // /print
+                String message = "WTB: ";
 
-        public virtual bool hooksReceive(RoomChatMessageMessage rcmm, List<AbstractShoppingList> lists)
-        { 
-   
+                foreach(String scroll in lists[0].getList())
+                {
+                    message += scroll + ", ";
+                }
+
+                message += "\nWTS: ";
+
+                foreach(String scroll in lists[1].getList())
+                {
+                    message += scroll + ", ";
+                }
+                
+                msg(message, App.MyProfile.ProfileInfo.name);
+                return true;
+            }
+            else if(splitted.Length == 2)
+            {
+                String message = "";
+                // /print buy, /print sell
+                if(splitted[1].Equals("buy"))
+                {
+                    message = "WTB: ";
+
+                    foreach (String scroll in lists[0].getList())
+                    {
+                        message += scroll + ", ";
+                    }
+                }
+                else if (splitted[1].Equals("sell"))
+                {
+                    message = "WTS: ";
+
+                    foreach (String scroll in lists[1].getList())
+                    {
+                        message += scroll + ", ";
+                    }
+                }
+                else
+                {
+                    msg("Unknown command. Correct syntax: /print buy or /print sell", "Shopping List");
+                }
+
+                msg(message, App.MyProfile.ProfileInfo.name);
+                return true;
+            }
+
             return false;
         }
 
-        public virtual string help()
-        {
-            return "";
-        }
-
-        protected void msg(String txt)
+        protected void msg(String txt, String from)
         {
             RoomChatMessageMessage rcmm = new RoomChatMessageMessage();
-            rcmm.from = "Shopping List";
+            rcmm.from = from;
             rcmm.text = txt;
             rcmm.roomName = App.ArenaChat.ChatRooms.GetCurrentRoom();
 

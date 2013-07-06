@@ -120,10 +120,7 @@ namespace ShoppingList
 
         private bool hooks(bool sending, RoomChatMessageMessage message)
         {
-            bool flag = false;
-            bool hooksSingle = sending ? command.hooksSend(message, lists) : command.hooksReceive(message, lists);
-
-            return flag | hooksSingle;
+            return command.hooksSend(message, lists);
         }
 	}
 }
