@@ -75,10 +75,130 @@ namespace ShoppingList
             {
                 return proceedPrint(rcmm, lists);
             }
+            else if (rcmm.text.StartsWith("/price"))
+            {
+                return proceedPrice(rcmm, lists);
+            }
+            else if (rcmm.text.StartsWith("/config"))
+            {
+                return proceedConfig(rcmm);
+            }
             else
             {
                 return false;
             }
+        }
+
+        private bool proceedPrice(RoomChatMessageMessage rcmm, List<AbstractShoppingList> lists)
+        {
+            String[] splitted = rcmm.text.Split(' ');
+            int mode = 0;
+            if (splitted[splitted.Length - 1][0].Equals('+'))
+            {
+                mode = 1;
+                splitted[splitted.Length - 1] = splitted[splitted.Length-1].Remove(0, 1);
+            }
+            else if (splitted[splitted.Length-1][0].Equals('-'))
+            {
+                mode = 2;
+                splitted[splitted.Length-1] = splitted[splitted.Length-1].Remove(0, 1);
+            }
+            
+            //msg(splitted[1], "ich");
+            
+            Regex regex = new Regex(@"[1-9][0-9]*");
+            Match match = regex.Match(splitted[splitted.Length-1]);
+
+            if (match.Success)
+            {
+                int price = Convert.ToInt32(splitted[splitted.Length - 1]);
+
+                String scrollName = "";
+
+                for (int i = 1; i < splitted.Length-1; i++)
+                {
+                    scrollName += splitted[i] + " ";
+                }
+
+                scrollName = scrollName.Trim();
+
+                if (mode > 0)
+                {
+                    if (mode == 2)
+                    {
+                        price *= -1;
+                    }
+
+                    if (lists[0].hasScroll(scrollName))
+                    {
+                        if (lists[0].alterPrice(scrollName, price)) 
+                        {
+                            msg((mode == 1 ? "Added " : "Removed ") + Math.Abs(price) + "g" + (mode == 1 ? " to " : " from ") + scrollName + " in your buylist", "Shopping List");
+                        }
+                        else
+                        {
+                            msg("Couldn't adjust price for " + scrollName + " in your buylist", "Shopping List");
+                        }
+                    }
+                    else if (lists[1].hasScroll(scrollName))
+                    {
+                        if (lists[1].alterPrice(scrollName, price))
+                        {
+                            msg((mode == 1 ? "Added " : "Removed ") + Math.Abs(price) + "g" + (mode == 1 ? " to " : " from ") + scrollName + " in your selllist", "Shopping List");
+                        }
+                        else
+                        {
+                            msg("Couldn't adjust price for " + scrollName + " in your selllist", "Shopping List");
+                        }
+                    }
+                    else
+                    {
+                        msg("Couldn't find " + scrollName + " in any of your lists", "Shopping List");
+                    }
+
+                }
+                else if(mode == 0)
+                {
+                    if (lists[0].hasScroll(scrollName))
+                    {
+                        if (lists[0].setPrice(scrollName, price))
+                        {
+                            msg("Set price to " + splitted[1] + "g for " + scrollName + " in your buylist", "Shopping List");
+                        }
+                        else
+                        {
+                            msg("Couldn't set price for " + scrollName + " in your buylist", "Shopping List");
+                        }
+                    }
+                    else if (lists[1].hasScroll(scrollName))
+                    {
+                        if (lists[1].setPrice(scrollName, price))
+                        {
+                            msg("Set price to " + splitted[1] + "g for " + scrollName + " in your selllist", "Shopping List");
+                        }
+                        else
+                        {
+                            msg("Couldn't set price for " + scrollName + " in your selllist", "Shopping List");
+                        }
+                    }
+                    else
+                    {
+                        msg("Couldn't find " + scrollName + " in any of your lists", "Shopping List");
+                    }
+                }
+
+                return true;
+            }
+            else
+            {
+                msg("Unknown Command", "Shopping List");
+                return true;
+            }
+        }
+
+        private bool proceedConfig(RoomChatMessageMessage rcmm)
+        {
+            return false;
         }
 
         private bool proceedList(RoomChatMessageMessage rcmm, AbstractShoppingList list)
@@ -88,7 +208,7 @@ namespace ShoppingList
 
             foreach (String scroll in listOfScrolls)
             {
-                temp += scroll.ToLower() + "\n";
+                temp += scroll.ToLower() + " - " + (list.hasPrice(scroll.ToLower()) ? "" + list.getPrice(scroll.ToLower()) : "0")  + "g\n";
             }
 
             msg(temp, "Shopping List");
@@ -98,7 +218,9 @@ namespace ShoppingList
 
         private bool proceedBuySell(RoomChatMessageMessage rcmm, AbstractShoppingList list)
         {
+            Regex regex = new Regex(@"[0-9]+");
             String[] splitted = rcmm.text.Split(',');
+
             if (splitted.Length > 1)
             {
                 String notAdded = "";
@@ -106,18 +228,36 @@ namespace ShoppingList
                 for (int i = 0; i < splitted.Length; i++)
                 {
                     String temp = splitted[i];
+                    int price = 0;
+                    int start = 0;
 
                     if (i == 0)
                     {
-                        String[] whiteSpaceSplitted = temp.Split(' ');
-                        temp = "";
-                        for (int j = 1; j < whiteSpaceSplitted.Length; j++)
-                        {
-                            temp += whiteSpaceSplitted[j] + " ";
-                        }
+                        start = 1;
+                    }
+                    else
+                    {
+                        start = 0;
                     }
 
-                    if (!list.addItem(temp.Trim()))
+                    String[] whiteSpaceSplitted = temp.Split(' ');
+                    temp = "";
+                    for (int j = start; j < whiteSpaceSplitted.Length; j++)
+                    {
+                        if (j == whiteSpaceSplitted.Length - 1)
+                        {
+                            Match match = regex.Match(whiteSpaceSplitted[j]);
+                            if (match.Success)
+                            {
+                                price = Convert.ToInt32(match.Groups[0].Value);
+                                break;
+                            }
+                        }
+
+                        temp += whiteSpaceSplitted[j] + " ";
+                    } 
+
+                    if (!list.addItem(temp.Trim(), price))
                     {
                         if (!notAdded.Equals(""))
                         {
@@ -143,15 +283,26 @@ namespace ShoppingList
                 if (whiteSpaceSplitted.Length > 1)
                 {
                     String scrollName = "";
-
+                    int price = 0;
+                    
                     for (int i = 1; i < whiteSpaceSplitted.Length; i++)
                     {
+                        if (i == whiteSpaceSplitted.Length - 1)
+                        {
+                            Match match = regex.Match(whiteSpaceSplitted[i]);
+                            if (match.Success)
+                            {
+                                price = Convert.ToInt32(match.Groups[0].Value);
+                                break;
+                            }
+                        }
+
                         scrollName += whiteSpaceSplitted[i] + " ";
                     }
 
-                    if (!list.addItem(scrollName.Trim()))
+                    if (!list.addItem(scrollName.Trim(), price))
                     {
-                        msg("Couldn't add all scrolls to " + list.getListName().ToLower() + ". Exception(s): " + scrollName, "Shopping List");
+                        msg("Couldn't add all scrolls to " + list.getListName().ToLower() + ". Exception: " + scrollName, "Shopping List");
                     }
                     else
                     {
@@ -256,14 +407,14 @@ namespace ShoppingList
 
                 foreach(String scroll in lists[0].getList())
                 {
-                    message += scroll + ", ";
+                    message += scroll + (lists[0].hasPrice(scroll) ? " " + lists[0].getPrice(scroll) + "g" : "") + ", ";
                 }
 
                 message += "\nWTS: ";
 
                 foreach(String scroll in lists[1].getList())
                 {
-                    message += scroll + ", ";
+                    message += scroll + (lists[1].hasPrice(scroll) ? " " + lists[1].getPrice(scroll) + "g" : "") + ", ";
                 }
                 
                 msg(message, App.MyProfile.ProfileInfo.name);
@@ -279,7 +430,7 @@ namespace ShoppingList
 
                     foreach (String scroll in lists[0].getList())
                     {
-                        message += scroll + ", ";
+                        message += scroll + (lists[0].hasPrice(scroll) ? " " + lists[0].getPrice(scroll) + "g" : "") + ", ";
                     }
                 }
                 else if (splitted[1].Equals("sell"))
@@ -288,7 +439,7 @@ namespace ShoppingList
 
                     foreach (String scroll in lists[1].getList())
                     {
-                        message += scroll + ", ";
+                        message += scroll + (lists[1].hasPrice(scroll) ? " " + lists[1].getPrice(scroll) + "g" : "") + ", ";
                     }
                 }
                 else
