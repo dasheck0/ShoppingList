@@ -12,11 +12,16 @@ namespace ShoppingList
 	{
         private Command command;
         private List<AbstractShoppingList> lists;
+        private Config config;
 
 		//initialize everything here, Game is loaded at this point
 		public Mod ()
 		{
             command = new Command();
+            config = new Config();
+            //config.loadConfigFile(Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "shoppinglist_config.txt");
+
+            command.setConfig(config);
 
             lists = new List<AbstractShoppingList>();
             lists.Add(new BuyingList());
@@ -61,42 +66,102 @@ namespace ShoppingList
                 RoomChatMessageMessage message = (RoomChatMessageMessage)info.arguments[0];
 
                 //parse buylist
+                String keywords = "(";
+                
                 if (lists[0].getList().Count > 0)
                 {                   
-                    String keywords = "(";
-
                     foreach(String keyword in lists[0].getList())
                     {
                         keywords += keyword + @"|";
                     }
-
-                    foreach (String keyword in lists[1].getList())
-                    {
-                        keywords += keyword + @"|";
-                    }
-
-                    keywords += ")";
-
-                    Regex regex = new Regex(keywords, RegexOptions.IgnoreCase);
-                    message.text = regex.Replace(message.text, "<color=#df3a01>$&</color>");
                 }
 
-                //parse selllist
-                /*if (lists[1].getList().Count > 0)
+                if(lists[0].getList().Count > 0)
                 {
-                    String keywords = "(";
-
                     foreach (String keyword in lists[1].getList())
                     {
                         keywords += keyword + @"|";
                     }
+                }
 
-                    keywords += ")";
+                keywords = keywords.Remove(keywords.Length-1,1);                  
+                keywords += ")";
 
-                    Regex regex = new Regex(keywords, RegexOptions.IgnoreCase);
-                    message.text = regex.Replace(message.text, "<color=#df3a01>$&</color>");
-                }     
-                 */          
+                Regex regex = new Regex(keywords, RegexOptions.IgnoreCase);
+                Regex wtbRegex = new Regex(@"(buy|buying|wtb)", RegexOptions.IgnoreCase);
+                Regex wtsRegex = new Regex(@"(sell|selling|wts)", RegexOptions.IgnoreCase);
+
+                Match wtbMatch = wtbRegex.Match(message.text);
+                Match wtsMatch = wtsRegex.Match(message.text);
+
+                int wtbPosition = -1;
+                int wtsPosition = -1;
+
+                if (wtbMatch.Success)
+                {
+                    wtbPosition = wtbMatch.Index;
+                }
+
+                if (wtsMatch.Success)
+                {
+                    wtsPosition = wtsMatch.Index;
+                }
+
+                bool wtbFirst = (wtbPosition < wtsPosition);
+
+                MatchCollection matches = regex.Matches(message.text);
+                List<String> buying = new List<String>();
+                List<String> selling = new List<String>();
+
+                for (int i = 0; i < matches.Count; i++)
+                {
+                    if (matches[i].Index > wtbPosition &&
+                        matches[i].Index < wtsPosition &&
+                        wtbFirst)
+                    {
+                        buying.Add(matches[i].Value);
+                    }
+                    else if (matches[i].Index > wtbPosition &&
+                            matches[i].Index > wtsPosition &&
+                            wtbFirst)
+                    {
+                        selling.Add(matches[i].Value);
+                    }
+                    else if (matches[i].Index > wtbPosition &&
+                             matches[i].Index > wtsPosition &&
+                             !wtbFirst)
+                    {
+                        buying.Add(matches[i].Value);
+                    }
+                    else if (matches[i].Index < wtbPosition &&
+                             matches[i].Index > wtsPosition &&
+                             !wtbFirst)
+                    {
+                        selling.Add(matches[i].Value);
+                    }
+                }
+
+                foreach (String scroll in buying)
+                {
+                    foreach (String item in lists[1].getList())
+                    {
+                        if (scroll.Equals(item))
+                        {
+                            message.text = message.text.Replace(scroll, "<color=#ffcc00>" + scroll + "</color>");
+                        }
+                    }                    
+                }
+
+                foreach (String scroll in selling)
+                {
+                    foreach (String item in lists[0].getList())
+                    {
+                        if (scroll.Equals(item))
+                        {
+                            message.text = message.text.Replace(scroll, "<color=#df3a01>" + scroll + "</color>");
+                        }
+                    } 
+                }         
                
                 return false;
             }
@@ -121,6 +186,17 @@ namespace ShoppingList
         private bool hooks(bool sending, RoomChatMessageMessage message)
         {
             return command.hooksSend(message, lists);
+        }
+
+        protected void msg(String txt, String from)
+        {
+            RoomChatMessageMessage rcmm = new RoomChatMessageMessage();
+            rcmm.from = from;
+            rcmm.text = txt;
+            rcmm.roomName = App.ArenaChat.ChatRooms.GetCurrentRoom();
+
+            App.ChatUI.handleMessage(rcmm);
+            App.ArenaChat.ChatRooms.ChatMessage(rcmm);
         }
 	}
 }

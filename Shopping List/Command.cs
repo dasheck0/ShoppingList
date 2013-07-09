@@ -9,6 +9,13 @@ namespace ShoppingList
 {
     class Command
     {
+        private Config config;
+
+        public void setConfig(Config theConfig)
+        {
+            config = theConfig;
+        }
+
         public virtual bool hooksSend(RoomChatMessageMessage rcmm, List<AbstractShoppingList> lists)
         {            
             if (rcmm.text.StartsWith("/buylist"))
@@ -198,7 +205,64 @@ namespace ShoppingList
 
         private bool proceedConfig(RoomChatMessageMessage rcmm)
         {
-            return false;
+            String[] splitted = rcmm.text.Split(' ');
+            bool error = false;
+
+            if (splitted.Length == 3)
+            {
+                if (splitted[1].Equals("autosave"))
+                {
+                    config.AutoSave = Convert.ToBoolean(splitted[2]);
+                }
+                else if (splitted[1].Equals("autoprice"))
+                {
+                    config.AutoPrice = Convert.ToBoolean(splitted[2]);
+                }
+                else if (splitted[1].Equals("opener"))
+                {
+                    config.Opener = splitted[2];
+                }
+                else if (splitted[1].Equals("endingmessage"))
+                {
+                    config.EndingMessage = splitted[2];
+                }
+                else if (splitted[1].Equals("separator"))
+                {
+                    config.Separator = splitted[2];
+                }
+                else
+                {
+                    msg("Unknown Command. Correct Syntax: /config (autoprice|autosave|opener|endingmessage|separator) value", "Shopping List");
+                    error = true;
+                }
+            }
+            else
+            {
+                if (splitted[1].Equals("endingmessage"))
+                {
+                    String temp = "";
+
+                    for (int i = 2; i < splitted.Length; i++)
+                    {
+                        temp += splitted[i] + " ";
+                    }
+
+                    config.EndingMessage = temp;
+                }
+                else
+                {
+                    msg("Unknown Command. Correct Syntax: /config (autoprice|autosave|opener|endingmessage|separator) value", "Shopping List");
+                    error = true;
+                }
+            }
+
+            if (!error)
+            {
+                //config.saveConfigFile(Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "shoppinglist_config.txt");
+                //msg("saved", "jkolfd");
+            }
+
+            return true;
         }
 
         private bool proceedList(RoomChatMessageMessage rcmm, AbstractShoppingList list)
@@ -403,19 +467,21 @@ namespace ShoppingList
             if(splitted.Length == 1)
             {
                 // /print
-                String message = "WTB: ";
+                String message = "WTB" + config.Opener + " ";
 
                 foreach(String scroll in lists[0].getList())
                 {
-                    message += scroll + (lists[0].hasPrice(scroll) ? " " + lists[0].getPrice(scroll) + "g" : "") + ", ";
+                    message += scroll + (lists[0].hasPrice(scroll) ? " " + lists[0].getPrice(scroll) + "g" : "") + " " + config.Separator + " ";
                 }
 
-                message += "\nWTS: ";
+                message += "\nWTS" + config.Opener + " ";
 
                 foreach(String scroll in lists[1].getList())
                 {
-                    message += scroll + (lists[1].hasPrice(scroll) ? " " + lists[1].getPrice(scroll) + "g" : "") + ", ";
+                    message += scroll + (lists[1].hasPrice(scroll) ? " " + lists[1].getPrice(scroll) + "g" : "") + " " + config.Separator + " ";
                 }
+
+                message += "\n" + config.EndingMessage;
                 
                 msg(message, App.MyProfile.ProfileInfo.name);
                 return true;
@@ -426,20 +492,20 @@ namespace ShoppingList
                 // /print buy, /print sell
                 if(splitted[1].Equals("buy"))
                 {
-                    message = "WTB: ";
+                    message = "WTB" + config.Opener + " ";
 
                     foreach (String scroll in lists[0].getList())
                     {
-                        message += scroll + (lists[0].hasPrice(scroll) ? " " + lists[0].getPrice(scroll) + "g" : "") + ", ";
+                        message += scroll + (lists[0].hasPrice(scroll) ? " " + lists[0].getPrice(scroll) + "g" : "") + " " + config.Separator + " ";
                     }
                 }
                 else if (splitted[1].Equals("sell"))
                 {
-                    message = "WTS: ";
+                    message = "WTS" + config.Opener + " ";
 
                     foreach (String scroll in lists[1].getList())
                     {
-                        message += scroll + (lists[1].hasPrice(scroll) ? " " + lists[1].getPrice(scroll) + "g" : "") + ", ";
+                        message += scroll + (lists[1].hasPrice(scroll) ? " " + lists[1].getPrice(scroll) + "g" : "") + " " + config.Separator + " ";
                     }
                 }
                 else
@@ -447,6 +513,7 @@ namespace ShoppingList
                     msg("Unknown command. Correct syntax: /print buy or /print sell", "Shopping List");
                 }
 
+                message += "\n" + config.EndingMessage;
                 msg(message, App.MyProfile.ProfileInfo.name);
                 return true;
             }
