@@ -145,7 +145,7 @@ namespace ShoppingList
                 {
                     foreach (String item in lists[1].getList())
                     {
-                        if (scroll.Equals(item))
+                        if (scroll.ToLower().Equals(item))
                         {
                             message.text = message.text.Replace(scroll, "<color=#ffcc00>" + scroll + "</color>");
                         }
@@ -156,7 +156,7 @@ namespace ShoppingList
                 {
                     foreach (String item in lists[0].getList())
                     {
-                        if (scroll.Equals(item))
+                        if (scroll.ToLower().Equals(item))
                         {
                             message.text = message.text.Replace(scroll, "<color=#df3a01>" + scroll + "</color>");
                         }
